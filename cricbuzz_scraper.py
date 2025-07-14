@@ -11,24 +11,22 @@ def fetch_live_scores():
     soup = BeautifulSoup(response.text, "html.parser")
 
     matches = []
-    match_blocks = soup.select(".cb-col.cb-col-100.cb-ltst-wgt-hdr")
+    match_cards = soup.select(".cb-mtch-lst.cb-col.cb-col-100.cb-tms-itm")
 
-    for block in match_blocks:
-        team_tags = block.select(".cb-ovr-flo.cb-hmscg-tm-nm")
-        score_tag = block.select_one(".cb-ovr-flo.cb-text-live")
-        status_tag = block.select_one(".cb-text-complete, .cb-text-live")
+    for card in match_cards:
+        try:
+            title = card.select_one(".cb-ovr-flo.cb-hmscg-tm-nm").text.strip()
+            score = card.select_one(".cb-ovr-flo.cb-text-live") or card.select_one(".cb-ovr-flo.cb-text-inprogress")
+            status = card.select_one(".cb-text-complete, .cb-text-live, .cb-text-inprogress")
 
-        if len(team_tags) == 2:
-            match_title = f"{team_tags[0].text.strip()} vs {team_tags[1].text.strip()}"
-        else:
-            continue
+            match_info = {
+                "match": title,
+                "score": score.text.strip() if score else "Not Available",
+                "status": status.text.strip() if status else "Not Available"
+            }
 
-        match_info = {
-            "match": match_title,
-            "score": score_tag.text.strip() if score_tag else "Score not available",
-            "status": status_tag.text.strip() if status_tag else "Status not available"
-        }
-
-        matches.append(match_info)
+            matches.append(match_info)
+        except Exception as e:
+            continue  # skip any card that fails
 
     return matches
